@@ -1,0 +1,1 @@
+ALTER TABLE public.cakes ADD COLUMN IF NOT EXISTS size_prices JSONB;
