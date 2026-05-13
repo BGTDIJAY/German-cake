@@ -2,14 +2,17 @@
  * Generate public/sitemap.xml at build time.
  * Pulls every cake from Supabase and emits one URL per cake plus all static routes.
  */
+
 import { writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SITE_URL = "https://premium-cake-forge.lovable.app";
+const SITE_URL = "https://german-cakes.in";
+
 const SUPABASE_URL = "https://fhfixoprgxwxrbfzjgzu.supabase.co";
+
 const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoZml4b3ByZ3h3eHJiZnpqZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MzQxOTQsImV4cCI6MjA5MTQxMDE5NH0.epmf9LYjo3FfkkypPSgghdKbthBOwuU1RBAD6noLfN8";
+  "YOUR_SUPABASE_ANON_KEY";
 
 const STATIC_ROUTES = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
@@ -32,13 +35,20 @@ async function fetchCakes() {
         },
       }
     );
+
     if (!res.ok) {
-      console.warn(`[sitemap] Cakes fetch failed: ${res.status}. Falling back to static routes only.`);
+      console.warn(
+        `[sitemap] Cakes fetch failed: ${res.status}. Falling back to static routes only.`
+      );
       return [];
     }
+
     return await res.json();
   } catch (err) {
-    console.warn("[sitemap] Could not reach Supabase, generating static-only sitemap:", err);
+    console.warn(
+      "[sitemap] Could not reach Supabase, generating static-only sitemap:",
+      err
+    );
     return [];
   }
 }
@@ -47,7 +57,9 @@ function urlEntry(loc, changefreq, priority, lastmod) {
   return [
     "  <url>",
     `    <loc>${loc}</loc>`,
-    lastmod ? `    <lastmod>${String(lastmod).slice(0, 10)}</lastmod>` : "",
+    lastmod
+      ? `    <lastmod>${String(lastmod).slice(0, 10)}</lastmod>`
+      : "",
     `    <changefreq>${changefreq}</changefreq>`,
     `    <priority>${priority}</priority>`,
     "  </url>",
@@ -60,11 +72,22 @@ async function main() {
   const cakes = await fetchCakes();
   const today = new Date().toISOString().slice(0, 10);
 
-  const staticUrls = STATIC_ROUTES.map((r) =>
-    urlEntry(`${SITE_URL}${r.path}`, r.changefreq, r.priority, today)
+  const staticUrls = STATIC_ROUTES.map((route) =>
+    urlEntry(
+      `${SITE_URL}${route.path}`,
+      route.changefreq,
+      route.priority,
+      today
+    )
   );
-  const cakeUrls = cakes.map((c) =>
-    urlEntry(`${SITE_URL}/cake/${c.id}`, "weekly", "0.6", c.created_at)
+
+  const cakeUrls = cakes.map((cake) =>
+    urlEntry(
+      `${SITE_URL}/cake/${cake.id}`,
+      "weekly",
+      "0.6",
+      cake.created_at
+    )
   );
 
   const xml = [
@@ -77,8 +100,11 @@ async function main() {
   ].join("\n");
 
   const __dirname = dirname(fileURLToPath(import.meta.url));
+
   const out = resolve(__dirname, "..", "public", "sitemap.xml");
+
   writeFileSync(out, xml, "utf8");
+
   console.log(
     `[sitemap] Wrote ${out} with ${STATIC_ROUTES.length} static + ${cakes.length} cake URLs.`
   );
